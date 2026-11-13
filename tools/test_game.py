@@ -3,12 +3,18 @@
 This tests game logic, NOT Minecraft syntax, permissions, selectors, or networking.
 """
 from pathlib import Path
+import hashlib
 import json
 import random
 import re
+import sys
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1] / "data/mtga/function"
+BASELINE = Path(__file__).resolve().parent / "fixtures/duels.json"
+RECORD_BASELINE = "--record-baseline" in sys.argv
+if RECORD_BASELINE:
+    sys.argv.remove("--record-baseline")
 
 
 class Returned(Exception):
@@ -90,9 +96,14 @@ class Game:
                     return 0
             return self.command(inner)
         if line.startswith("function "):
-            parts = line.split()
+            parts = line.split(" ", 2)
             assert parts[1].startswith("mtga:")
-            args = self.storage[parts[4]] if len(parts) > 2 else None
+            args = None
+            if len(parts) > 2:
+                if parts[2].startswith("with storage "):
+                    args = self.storage[parts[2].split()[2]]
+                else:
+                    args = json.loads(parts[2])
             return self.run(parts[1][5:], args)
         if line.startswith("scoreboard players "):
             parts = line.split()
@@ -173,28 +184,28 @@ class Rules(unittest.TestCase):
         g.set("h1_1", 1)
         g.set("h1_2", 1)
         g.set("h1_3", 3)
-        g.run("seat/1/hand/1")
+        g.run("seat/1/hand", {"h": 1})
         self.assertEqual(g.get("mana1"), 1)
-        g.run("seat/1/hand/2")
+        g.run("seat/1/hand", {"h": 2})
         self.assertEqual(g.get("h1_2"), 1)
-        g.run("seat/1/hand/3")
+        g.run("seat/1/hand", {"h": 3})
         self.assertEqual(g.get("h1_3"), 3)  # Can't afford it.
         g.set("mana1", 2)
-        g.run("seat/1/hand/3")
+        g.run("seat/1/hand", {"h": 3})
         self.assertEqual(g.get("mana1"), 0)
         self.assertEqual(g.get("c1_1"), 3)
-        g.run("seat/1/toggle/1")
+        g.run("seat/1/toggle", {"b": 1})
         self.assertEqual(g.get("a1_1"), 0)
 
     def test_simultaneous_lethal_trade(self):
         g = self.game()
         self.creature(g, 1, 1, 2, 2)
         self.creature(g, 2, 1, 2, 1, ready=0)  # Summoning sickness doesn't prevent blocks.
-        g.run("seat/1/toggle/1")
+        g.run("seat/1/toggle", {"b": 1})
         g.run("seat/1/commit")
         self.assertEqual(g.get("phase"), 2)
         self.assertEqual(g.get("tap1_1"), 1)
-        g.run("seat/2/block/1_1")
+        g.run("seat/2/block_pair", {"a": 1, "b": 1})
         g.run("game/combat")
         self.assertEqual(g.get("c1_1"), 0)
         self.assertEqual(g.get("c2_1"), 0)
@@ -208,25 +219,25 @@ class Rules(unittest.TestCase):
             for slot in (1, 2):
                 self.creature(g, s, slot, 2, 2)
         for slot in (1, 2):
-            g.run(f"seat/1/toggle/{slot}")
+            g.run("seat/1/toggle", {"b": slot})
         g.run("seat/1/commit")
-        g.run("seat/2/block/1_1")
-        g.run("seat/2/block/2_1")  # Already used.
+        g.run("seat/2/block_pair", {"a": 1, "b": 1})
+        g.run("seat/2/block_pair", {"a": 2, "b": 1})  # Already used.
         self.assertEqual(g.get("b1_2"), 0)
-        g.run("seat/2/block/1_2")
+        g.run("seat/2/block_pair", {"a": 1, "b": 2})
         self.assertEqual(g.get("used2_1"), 0)
-        g.run("seat/2/block/2_1")
+        g.run("seat/2/block_pair", {"a": 2, "b": 1})
         self.assertEqual(g.get("b1_2"), 1)
-        g.run("seat/2/block/1_0")
+        g.run("seat/2/block_pair", {"a": 1, "b": 0})
         self.assertEqual(g.get("used2_2"), 0)
         g.set("tap2_2", 1)
-        g.run("seat/2/block/1_2")
+        g.run("seat/2/block_pair", {"a": 1, "b": 2})
         self.assertEqual(g.get("b1_1"), 0)
 
     def test_unblocked_damage_and_turn_reset(self):
         g = self.game()
         self.creature(g, 1, 1, 3, 3)
-        g.run("seat/1/toggle/1")
+        g.run("seat/1/toggle", {"b": 1})
         g.run("seat/1/commit")
         g.run("game/combat")
         self.assertEqual(g.get("life2"), 17)
@@ -240,17 +251,17 @@ class Rules(unittest.TestCase):
         g = self.game()
         g.set("mana1", 10)
         g.set("h1_1", 7)
-        g.run("seat/1/hand/1")
+        g.run("seat/1/hand", {"h": 1})
         self.assertEqual(g.get("life2"), 18)
         self.assertEqual(g.get("mana1"), 9)
         g.set("mana2", 2)
         g.set("h2_1", 8)
-        g.run("seat/2/hand/1")
+        g.run("seat/2/hand", {"h": 1})
         self.assertEqual(g.get("life2"), 24)
         for b in range(1, 6):
             self.creature(g, 1, b, 2, 2)
         g.set("h1_1", 3)
-        g.run("seat/1/hand/1")
+        g.run("seat/1/hand", {"h": 1})
         self.assertEqual(g.get("h1_1"), 3)
         self.assertEqual(g.get("mana1"), 9)
         for h in range(1, 11):
@@ -269,14 +280,64 @@ class Rules(unittest.TestCase):
         g.set("life2", 2)
         g.set("mana1", 1)
         g.set("h1_1", 7)
-        g.run("seat/1/hand/1")
+        g.run("seat/1/hand", {"h": 1})
         g.run("game/check")
         self.assertEqual(g.get("winner"), 1)
         self.assertEqual(g.get("active"), 0)
 
+    def test_slot_dispatch_and_invalid_requests(self):
+        for seat in (1, 2):
+            for hand in range(1, 25):
+                g = self.game()
+                g.set("turn", seat)
+                g.set(f"h{seat}_{hand}", seat)
+                g.set("request", hand)
+                g.run(f"seat/{seat}/play")
+                self.assertEqual(g.get(f"h{seat}_{hand}"), 0)
+                self.assertEqual(g.get(f"lands{seat}"), 1)
+            for slot in range(1, 6):
+                g = self.game()
+                g.set("turn", seat)
+                self.creature(g, seat, slot, 2, 2)
+                g.set("request", slot)
+                g.run(f"seat/{seat}/attack")
+                self.assertEqual(g.get(f"a{seat}_{slot}"), 1)
+            for action in ("play", "attack", "block"):
+                g = self.game()
+                g.set("turn", seat if action != "block" else 3-seat)
+                g.set("phase", 2 if action == "block" else 1)
+                for request in (-1, 0, 6 if action == "attack" else 999):
+                    before = dict(g.scores)
+                    before["#request"] = request
+                    g.set("request", request)
+                    g.run(f"seat/{seat}/{action}")
+                    self.assertEqual(g.scores, before)
+
+    def test_every_block_and_combat_pair(self):
+        for seat in (1, 2):
+            other = 3-seat
+            for attacker in range(1, 6):
+                for blocker in range(1, 6):
+                    g = self.game()
+                    g.set("turn", other)
+                    self.creature(g, other, attacker, 2, 2)
+                    self.creature(g, seat, blocker, 2, 2)
+                    g.set(f"a{other}_{attacker}", 1)
+                    g.set("phase", 2)
+                    g.set("request", attacker*10+blocker)
+                    g.run(f"seat/{seat}/block")
+                    self.assertEqual(g.get(f"b{other}_{attacker}"), blocker)
+                    g.run("game/combat")
+                    self.assertEqual(g.get(f"c{other}_{attacker}"), 0)
+                    self.assertEqual(g.get(f"c{seat}_{blocker}"), 0)
+                    self.assertEqual(g.get(f"grave{seat}"), 1)
+                    self.assertEqual(g.get(f"grave{other}"), 1)
+
     def test_bot_and_long_games(self):
+        results = []
         for seed in range(30):
             g = self.game(seed)
+            trace = hashlib.sha256()
             # A simple Red policy versus the shipped Green policy.
             for _ in range(150):
                 if g.get("active") == 0:
@@ -289,12 +350,12 @@ class Rules(unittest.TestCase):
                     for cid in (1, 5, 3, 7):
                         for h in range(1, 25):
                             if g.get(f"h1_{h}") == cid:
-                                g.run(f"seat/1/hand/{h}")
+                                g.run("seat/1/hand", {"h": h})
                     g.run("game/check")
                     if not g.get("active"):
                         break
                     for b in range(1, 6):
-                        g.run(f"seat/1/toggle/{b}")
+                        g.run("seat/1/toggle", {"b": b})
                     g.run("seat/1/commit")
                 for seat in (1, 2):
                     self.assertGreaterEqual(g.get(f"mana{seat}"), 0)
@@ -304,7 +365,23 @@ class Rules(unittest.TestCase):
                     cards += sum(g.get(f"c{seat}_{b}") > 0 for b in range(1, 6))
                     cards += g.get(f"lands{seat}") + g.get(f"grave{seat}")
                     self.assertEqual(cards, 24)
+                state = {
+                    "scores": {k: v for k, v in g.scores.items() if re.fullmatch(
+                        r"#(?:active|bot|phase|turn|winner|round|delay|"
+                        r"(?:life|lands|mana|landed|grave)[12]|"
+                        r"(?:h|c|p|t|r|tap|a|b|used)[12]_\d+)", k)},
+                    "decks": g.storage["mtga:game"],
+                }
+                trace.update(json.dumps(state, sort_keys=True).encode("utf-8"))
             self.assertEqual(g.get("active"), 0, f"Seed {seed} did not finish")
+            results.append({"seed": seed, "winner": g.get("winner"),
+                            "round": g.get("round"), "trace": trace.hexdigest()})
+        if RECORD_BASELINE:
+            BASELINE.parent.mkdir(parents=True, exist_ok=True)
+            BASELINE.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
+        else:
+            self.assertEqual(results, json.loads(BASELINE.read_text(encoding="utf-8")),
+                             "Game behavior changed from the pre-macro baseline")
 
 
 if __name__ == "__main__":

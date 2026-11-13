@@ -13,12 +13,28 @@ for path in [ROOT / "pack.mcmeta", *ROOT.rglob("*.json")]:
         errors.append(f"{path.relative_to(ROOT)}: {exc}")
 
 refs = 0
+sources = {path.relative_to(functions).as_posix().removesuffix(".mcfunction"):
+           path.read_text(encoding="utf-8") for path in functions.rglob("*.mcfunction")}
+parameters = {name: set(re.findall(r"\$\((\w+)\)", source)) for name, source in sources.items()}
 for path in functions.rglob("*.mcfunction"):
     for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-        for name in re.findall(r"\bfunction mtga:([a-z0-9_/]+)", line):
+        if "$(" in line and not line.startswith("$"):
+            errors.append(f"{path.relative_to(ROOT)}:{number}: macro line missing $ prefix")
+        for match in re.finditer(r"\bfunction mtga:([a-z0-9_/]+)(.*)$", line):
+            name, tail = match.groups()
             refs += 1
-            if not (functions / (name + ".mcfunction")).is_file():
+            if name not in sources:
                 errors.append(f"{path.relative_to(ROOT)}:{number}: missing {name}")
+                continue
+            if tail.strip().startswith("with storage "):
+                continue  # Storage arguments are exercised by game-logic tests.
+            try:
+                args = json.loads(tail) if tail.strip() else {}
+                missing = parameters[name] - args.keys()
+                if missing:
+                    errors.append(f"{path.relative_to(ROOT)}:{number}: {name} missing arguments {sorted(missing)}")
+            except (ValueError, AttributeError):
+                errors.append(f"{path.relative_to(ROOT)}:{number}: invalid inline macro arguments")
         if "clickEvent" in line or "hoverEvent" in line:
             errors.append(f"{path.relative_to(ROOT)}:{number}: obsolete text component field")
         if "tellraw " in line:
@@ -42,5 +58,5 @@ assert json.loads((ROOT / "pack.mcmeta").read_text())["pack"]["min_format"] == [
 
 if errors:
     raise SystemExit("\n".join(errors))
-print(f"PASS: metadata/JSON, tellraw payloads, {refs} function references, two 24-card decks.")
+print(f"PASS: metadata/JSON, tellraw payloads, {refs} function references and macro arguments, two 24-card decks.")
 print("Minecraft runtime validation still required.")

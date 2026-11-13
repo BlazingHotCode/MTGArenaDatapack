@@ -1,6 +1,8 @@
 """Generate the MTG Arena learning datapack. Run from any working directory."""
 from pathlib import Path
+import hashlib
 import json
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 FUN = ROOT / "data/mtga/function"
@@ -15,17 +17,18 @@ CARDS = {
     8: ("Nourish", 2, 0, 0, "Gain 6 life. Main phase only in this prototype."),
 }
 TRIGGERS = ["menu", "play", "attack", "block", "end"]
+OUTPUTS = {}
+MANIFEST = ROOT / "tools/generated.json"
 
 
 def write(path, value):
-    path = ROOT / path
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(value, encoding="utf-8")
+    OUTPUTS[path] = value
 
 
 def fn(name, lines):
     if isinstance(lines, str):
         lines = lines.strip().splitlines()
+    lines = [("$" + line if "$(" in line and not line.startswith("$") else line) for line in lines]
     write(f"data/mtga/function/{name}.mcfunction", "\n".join(lines) + "\n")
 
 
@@ -43,6 +46,46 @@ def cond(key, value, command):
 
 def call(name):
     return f"function mtga:{name}"
+
+
+def macrocall(name, **args):
+    return call(name) + " " + json.dumps(args, separators=(",", ":"))
+
+
+def digest(value):
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def finish():
+    """Only remove obsolete outputs recorded by an earlier build, if unchanged."""
+    previous = json.loads(MANIFEST.read_text(encoding="utf-8")) if MANIFEST.exists() else {}
+    obsolete = previous.keys() - OUTPUTS.keys()
+    for name in obsolete:
+        path = (ROOT / name).resolve()
+        if not path.is_relative_to(FUN.resolve()):
+            raise SystemExit(f"Refusing to remove output outside function directory: {name}")
+        if path.exists() and digest(path.read_text(encoding="utf-8")) != previous[name]:
+            raise SystemExit(f"Refusing to remove modified generated file: {name}")
+    manifest = json.dumps({name: digest(value) for name, value in sorted(OUTPUTS.items())}, indent=2) + "\n"
+    if "--check" in sys.argv:
+        stale = [name for name, value in OUTPUTS.items()
+                 if not (ROOT / name).exists() or (ROOT / name).read_text(encoding="utf-8") != value]
+        stale += [name for name in obsolete if (ROOT / name).exists()]
+        if not MANIFEST.exists() or MANIFEST.read_text(encoding="utf-8") != manifest:
+            stale.append("tools/generated.json")
+        if stale:
+            raise SystemExit("Generated outputs are stale:\n" + "\n".join(stale))
+        print("PASS: generated outputs and manifest are up to date.")
+        return
+    for name, value in OUTPUTS.items():
+        path = ROOT / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(value, encoding="utf-8")
+    for name in obsolete:
+        (ROOT / name).unlink(missing_ok=True)
+    MANIFEST.write_text(manifest, encoding="utf-8")
+    count = sum(name.endswith(".mcfunction") for name in OUTPUTS)
+    print(f"Generated {count} functions; removed {len(obsolete)} obsolete outputs.")
 
 
 def text(value, color="gray"):
@@ -198,7 +241,7 @@ fn("view", [
 for s in (1, 2):
     o = 3-s
     prefix = f"seat/{s}"
-    # Dynamic indexing is confined to this small macro, with integer-only arguments.
+    # Slot macros receive bounded integer arguments from dispatchers below.
     fn(f"{prefix}/draw_pick", [
         f"$execute store result score #draw mtg run data get storage mtga:game deck{s}[$(index)]",
         f"$data remove storage mtga:game deck{s}[$(index)]",
@@ -253,14 +296,13 @@ for s in (1, 2):
     fn(f"{prefix}/play", [
         f"execute unless score #turn mtg matches {s} run return 0",
         "execute unless score #phase mtg matches 1 run return 0",
-        *[cond("request", h, call(f"{prefix}/hand/{h}")) for h in range(1, 25)],
+        *[cond("request", h, macrocall(f"{prefix}/hand", h=h)) for h in range(1, 25)],
     ])
-    for h in range(1, 25):
-        fn(f"{prefix}/hand/{h}", [
-            op("card", "=", f"h{s}_{h}"), set_("played", 0),
-            *[cond("card", cid, call(f"{prefix}/card/{cid}")) for cid in CARDS],
-            cond("played", 1, set_(f"h{s}_{h}", 0)),
-        ])
+    fn(f"{prefix}/hand", [
+        op("card", "=", f"h{s}_$(h)"), set_("played", 0),
+        *[cond("card", cid, call(f"{prefix}/card/{cid}")) for cid in CARDS],
+        cond("played", 1, set_(f"h{s}_$(h)", 0)),
+    ])
     for cid, (name, cost, power, tough, desc) in CARDS.items():
         lines = []
         if cid <= 2:
@@ -290,36 +332,30 @@ for s in (1, 2):
     fn(f"{prefix}/attack", [
         f"execute unless score #turn mtg matches {s} run return 0",
         "execute unless score #phase mtg matches 1 run return 0",
-        *[cond("request", b, call(f"{prefix}/toggle/{b}")) for b in range(1, 6)],
+        *[cond("request", b, macrocall(f"{prefix}/toggle", b=b)) for b in range(1, 6)],
     ])
-    for b in range(1, 6):
-        fn(f"{prefix}/toggle/{b}", [
-            f"execute unless score #c{s}_{b} mtg matches 1.. run return 0",
-            f"execute unless score #r{s}_{b} mtg matches 1 run return 0",
-            f"execute unless score #tap{s}_{b} mtg matches 0 run return 0",
-            op("old", "=", f"a{s}_{b}"), set_(f"a{s}_{b}", 1),
-            cond("old", 1, set_(f"a{s}_{b}", 0)),
-        ])
+    fn(f"{prefix}/toggle", [
+        f"execute unless score #c{s}_$(b) mtg matches 1.. run return 0",
+        f"execute unless score #r{s}_$(b) mtg matches 1 run return 0",
+        f"execute unless score #tap{s}_$(b) mtg matches 0 run return 0",
+        op("old", "=", f"a{s}_$(b)"), set_(f"a{s}_$(b)", 1),
+        cond("old", 1, set_(f"a{s}_$(b)", 0)),
+    ])
     fn(f"{prefix}/block", [
         f"execute if score #turn mtg matches {s} run return 0",
         "execute unless score #phase mtg matches 2 run return 0",
-        *[cond("request", a*10+b, call(f"{prefix}/block/{a}_{b}"))
+        *[cond("request", a*10+b, macrocall(f"{prefix}/block_pair", a=a, b=b))
           for a in range(1, 6) for b in range(0, 6)],
     ])
-    for a in range(1, 6):
-        for b in range(0, 6):
-            lines = [f"execute unless score #a{o}_{a} mtg matches 1 run return 0"]
-            if b:
-                lines += [
-                    f"execute unless score #c{s}_{b} mtg matches 1.. run return 0",
-                    f"execute unless score #tap{s}_{b} mtg matches 0 run return 0",
-                    f"execute unless score #used{s}_{b} mtg matches 0 run return 0",
-                ]
-            lines += [cond(f"b{o}_{a}", prev, set_(f"used{s}_{prev}", 0)) for prev in range(1, 6)]
-            lines += [set_(f"b{o}_{a}", b)]
-            if b:
-                lines += [set_(f"used{s}_{b}", 1)]
-            fn(f"{prefix}/block/{a}_{b}", lines)
+    fn(f"{prefix}/block_pair", [
+        f"execute unless score #a{o}_$(a) mtg matches 1 run return 0",
+        set_("blocker", "$(b)"),
+        *[f"execute unless score #blocker mtg matches 0 unless score #{key}{s}_$(b) mtg matches {value} run return 0"
+          for key, value in (("c", "1.."), ("tap", "0"), ("used", "0"))],
+        *[cond(f"b{o}_$(a)", prev, set_(f"used{s}_{prev}", 0)) for prev in range(1, 6)],
+        set_(f"b{o}_$(a)", "$(b)"),
+        f"execute unless score #blocker mtg matches 0 run " + set_(f"used{s}_$(b)", 1),
+    ])
     fn(f"{prefix}/end", [
         f"execute if score #phase mtg matches 1 if score #turn mtg matches {s} run return run function mtga:{prefix}/commit",
         f"execute if score #phase mtg matches 2 unless score #turn mtg matches {s} run function mtga:game/combat",
@@ -344,36 +380,32 @@ for s in (1, 2):
         set_("handcount", 0),
         *[f"execute if score #h{s}_{h} mtg matches 1.. run scoreboard players add #handcount mtg 1"
           for h in range(1, 25)],
-        *[f"execute if score #handcount mtg matches 8.. if score #h{s}_{h} mtg matches 1.. run function mtga:{prefix}/discard/{h}"
+        *[f"execute if score #handcount mtg matches 8.. if score #h{s}_{h} mtg matches 1.. run " +
+          macrocall(f"{prefix}/discard", h=h)
           for h in range(24, 0, -1)],
     ])
-    for h in range(1, 25):
-        fn(f"{prefix}/discard/{h}", [
-            set_(f"h{s}_{h}", 0), "scoreboard players remove #handcount mtg 1",
-            f"scoreboard players add #grave{s} mtg 1",
-            announce(f"Seat {s} discards hand slot {h} to the seven-card limit."),
-        ])
+    fn(f"{prefix}/discard", [
+        set_(f"h{s}_$(h)", 0), "scoreboard players remove #handcount mtg 1",
+        f"scoreboard players add #grave{s} mtg 1",
+        announce(f"Seat {s} discards hand slot $(h) to the seven-card limit."),
+    ])
     # Resolve each pair using pre-damage stats, so both creatures can die.
-    for a in range(1, 6):
-        lines = [
-            f"execute if score #b{s}_{a} mtg matches 0 run return run " +
-            op(f"life{o}", "-=", f"p{s}_{a}"),
-            *[cond(f"b{s}_{a}", b, call(f"{prefix}/fight/{a}_{b}")) for b in range(1, 6)],
-        ]
-        fn(f"{prefix}/combat/{a}", lines)
-        for b in range(1, 6):
-            fn(f"{prefix}/fight/{a}_{b}", [
-                set_("deadA", 0), set_("deadB", 0),
-                f"execute if score #p{s}_{a} mtg >= #t{o}_{b} mtg run " + set_("deadB", 1),
-                f"execute if score #p{o}_{b} mtg >= #t{s}_{a} mtg run " + set_("deadA", 1),
-                cond("deadA", 1, call(f"{prefix}/die/{a}")),
-                cond("deadB", 1, call(f"seat/{o}/die/{b}")),
-            ])
-    for b in range(1, 6):
-        fn(f"{prefix}/die/{b}", [
-            *[set_(f"{key}{s}_{b}", 0) for key in ("c", "p", "t", "r", "tap", "a", "b", "used")],
-            f"scoreboard players add #grave{s} mtg 1", announce(f"Seat {s}'s creature in slot {b} dies."),
-        ])
+    fn(f"{prefix}/combat", [
+        f"execute if score #b{s}_$(a) mtg matches 0 run return run " +
+        op(f"life{o}", "-=", f"p{s}_$(a)"),
+        *[cond(f"b{s}_$(a)", b, macrocall(f"{prefix}/fight", a="$(a)", b=b)) for b in range(1, 6)],
+    ])
+    fn(f"{prefix}/fight", [
+        set_("deadA", 0), set_("deadB", 0),
+        f"execute if score #p{s}_$(a) mtg >= #t{o}_$(b) mtg run " + set_("deadB", 1),
+        f"execute if score #p{o}_$(b) mtg >= #t{s}_$(a) mtg run " + set_("deadA", 1),
+        cond("deadA", 1, macrocall(f"{prefix}/die", b="$(a)")),
+        cond("deadB", 1, macrocall(f"seat/{o}/die", b="$(b)")),
+    ])
+    fn(f"{prefix}/die", [
+        *[set_(f"{key}{s}_$(b)", 0) for key in ("c", "p", "t", "r", "tap", "a", "b", "used")],
+        f"scoreboard players add #grave{s} mtg 1", announce(f"Seat {s}'s creature in slot $(b) dies."),
+    ])
 
 for action in ("play", "attack", "block", "end"):
     fn(f"input/{action}", [
@@ -384,7 +416,8 @@ for action in ("play", "attack", "block", "end"):
         call("game/check"), call("game/refresh"),
     ])
 fn("game/combat", [
-    *[f"execute if score #turn mtg matches {s} if score #a{s}_{a} mtg matches 1 run function mtga:seat/{s}/combat/{a}"
+    *[f"execute if score #turn mtg matches {s} if score #a{s}_{a} mtg matches 1 run " +
+      macrocall(f"seat/{s}/combat", a=a)
       for s in (1, 2) for a in range(1, 6)],
     call("game/check"),
     "execute if score #active mtg matches 1 run function mtga:game/next",
@@ -409,8 +442,8 @@ fn("bot/tick", [
 ])
 fn("bot/main", [
     # Land before spells; larger creatures before smaller ones; then life gain.
-    *[f"execute if score #h2_{h} mtg matches 2 run function mtga:seat/2/hand/{h}" for h in range(1, 25)],
-    *[f"execute if score #h2_{h} mtg matches {cid} run function mtga:seat/2/hand/{h}"
+    *[f"execute if score #h2_{h} mtg matches 2 run " + macrocall("seat/2/hand", h=h) for h in range(1, 25)],
+    *[f"execute if score #h2_{h} mtg matches {cid} run " + macrocall("seat/2/hand", h=h)
       for cid in (6, 4, 8) for h in range(1, 25)],
     *[f"execute if score #r2_{b} mtg matches 1 if score #tap2_{b} mtg matches 0 if score #c2_{b} mtg matches 1.. run " +
       set_(f"a2_{b}", 1) for b in range(1, 6)],
@@ -419,7 +452,8 @@ fn("bot/main", [
     call("game/refresh"),
 ])
 fn("bot/blocks", [
-    *[f"execute if score #a1_{a} mtg matches 1 if score #b1_{a} mtg matches 0 if score #c2_{b} mtg matches 1.. if score #tap2_{b} mtg matches 0 if score #used2_{b} mtg matches 0 run function mtga:seat/2/block/{a}_{b}"
+    *[f"execute if score #a1_{a} mtg matches 1 if score #b1_{a} mtg matches 0 if score #c2_{b} mtg matches 1.. if score #tap2_{b} mtg matches 0 if score #used2_{b} mtg matches 0 run " +
+      macrocall("seat/2/block_pair", a=a, b=b)
       for a in range(1, 6) for b in range(1, 6)],
     announce("Green bot has assigned blockers."), call("game/combat"), call("game/refresh"),
 ])
@@ -433,4 +467,4 @@ write("design/cards.json", json.dumps({
     str(cid): dict(name=v[0], cost=v[1], power=v[2], toughness=v[3], text=v[4])
     for cid, v in CARDS.items()
 }, indent=2) + "\n")
-print(f"Generated {len(list(FUN.rglob('*.mcfunction')))} functions in {ROOT}")
+finish()

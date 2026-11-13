@@ -1,0 +1,182 @@
+[
+  {
+    "seed": 0,
+    "winner": 2,
+    "round": 16,
+    "trace": "b1ec4ee4b281b4ed750872edbfdc838131b8fa7a2980a0bf20ec99dd820f0422"
+  },
+  {
+    "seed": 1,
+    "winner": 2,
+    "round": 18,
+    "trace": "5046ff7a4579d49a492a78283e5c1b0344ea670fd02f47b262864ed8a27ab818"
+  },
+  {
+    "seed": 2,
+    "winner": 2,
+    "round": 14,
+    "trace": "2d600c081d33bf67957dea22577a413fe64f3cb712430cbc95d6b2a38f9266c7"
+  },
+  {
+    "seed": 3,
+    "winner": 2,
+    "round": 16,
+    "trace": "210226b65b24a3cff1e1e14f6cbd6e14afefc9bbfbe24544a3047504957ee102"
+  },
+  {
+    "seed": 4,
+    "winner": 2,
+    "round": 14,
+    "trace": "ee8211505bb4d7e59cd553915c4cce1f09600824f0dbff4c042cc1d56547cb4e"
+  },
+  {
+    "seed": 5,
+    "winner": 2,
+    "round": 18,
+    "trace": "d122e492f2bd38f399555da41f7514544f370608e1dd26036a22c2b3cb2ab08f"
+  },
+  {
+    "seed": 6,
+    "winner": 2,
+    "round": 16,
+    "trace": "86be2af880f5bf786f7fa976a60abe703b51bef231669bdec367c80616d7c6f5"
+  },
+  {
+    "seed": 7,
+    "winner": 2,
+    "round": 16,
+    "trace": "e527a7cbe9962f0ad982fc24a1f02bada847ddcf034db71071c26af265003eb8"
+  },
+  {
+    "seed": 8,
+    "winner": 2,
+    "round": 18,
+    "trace": "52e0df5085334d23c85ecdcbc3da70dd94ffca3e0ff44bda9f0ca293dff9d4c6"
+  },
+  {
+    "seed": 9,
+    "winner": 2,
+    "round": 16,
+    "trace": "bd941036438732235ef0b7b1deb60ba28f1a6ad4a97aaa56e36e3817e211a896"
+  },
+  {
+    "seed": 10,
+    "winner": 1,
+    "round": 19,
+    "trace": "7abe995e45300ffe258cc685ad8cb81c654762ccd5c54b9a1cefebbad698d2a8"
+  },
+  {
+    "seed": 11,
+    "winner": 1,
+    "round": 21,
+    "trace": "a5584bc61a38f1b67d48dd712f0fee58a57306064ade7fd5bc0146460f634e49"
+  },
+  {
+    "seed": 12,
+    "winner": 2,
+    "round": 16,
+    "trace": "103bd3197d254f4b46bd2a728929ea80fdadf9b4d7ebcebbf7561489dc58bfae"
+  },
+  {
+    "seed": 13,
+    "winner": 2,
+    "round": 16,
+    "trace": "e857419a4de52b014cb369b0aa3b7bbffa43088ebcfd42c4e952ae7f1264bf38"
+  },
+  {
+    "seed": 14,
+    "winner": 2,
+    "round": 18,
+    "trace": "bfa98a419740d90a7371acd1c2573737b973a0ce274fd64a8e607f838e5d0c14"
+  },
+  {
+    "seed": 15,
+    "winner": 2,
+    "round": 16,
+    "trace": "957013314efc028f1ac3a918650a39635e7ff3137bdfd8633bd08f4029ce0981"
+  },
+  {
+    "seed": 16,
+    "winner": 2,
+    "round": 16,
+    "trace": "2029be2944516f12627e28e892bffba74da68fc3695e542a61c2fb5a4f4f8b48"
+  },
+  {
+    "seed": 17,
+    "winner": 2,
+    "round": 16,
+    "trace": "6a5080c09238dd3fefdfa043138ce84249c7720c6655bf6da001f756268498f6"
+  },
+  {
+    "seed": 18,
+    "winner": 2,
+    "round": 16,
+    "trace": "d7cba9b1ee4913b7bbb1569ee298b141a9dcd13b39efe10710cb1f62f9cbb939"
+  },
+  {
+    "seed": 19,
+    "winner": 2,
+    "round": 14,
+    "trace": "9908699ab291db05942a31091ad00ecb8cd3b93c01dc489f8b06b81dba76b763"
+  },
+  {
+    "seed": 20,
+    "winner": 2,
+    "round": 12,
+    "trace": "4e94e6185155d25266abf0b1dd1a73407947c1d07922980e003930dff2c34bd8"
+  },
+  {
+    "seed": 21,
+    "winner": 2,
+    "round": 14,
+    "trace": "972a196d7ba2192f217fc078f62182a9ad987f14cc4c85c45cbb9da51a6b6323"
+  },
+  {
+    "seed": 22,
+    "winner": 2,
+    "round": 16,
+    "trace": "787d4d0843ef4b933108921e4ea860f12cc7cd9c1fb0bd248c4215861b4ff2c2"
+  },
+  {
+    "seed": 23,
+    "winner": 2,
+    "round": 14,
+    "trace": "06e4a0d86db44b7ef2a51321d015b30ed0fa5b83755126504bcc505c82773a70"
+  },
+  {
+    "seed": 24,
+    "winner": 2,
+    "round": 16,
+    "trace": "11eca580f0a1b8923c2effb4551397e77237a9cba0be62938e043818dc20a099"
+  },
+  {
+    "seed": 25,
+    "winner": 2,
+    "round": 16,
+    "trace": "86967389d497b2befcedb7d97636aba08f22ec63ae2129b9dd86553cc52d3154"
+  },
+  {
+    "seed": 26,
+    "winner": 2,
+    "round": 14,
+    "trace": "8e26690ad989831a447669988bb5164fa0cd6115115106bfa06cf53e30c72803"
+  },
+  {
+    "seed": 27,
+    "winner": 2,
+    "round": 18,
+    "trace": "9f32e59c0260301118e3658bc31709523de7d62afb9a754a133f1e89ff64560f"
+  },
+  {
+    "seed": 28,
+    "winner": 2,
+    "round": 14,
+    "trace": "a3fdafd25fbff74c2d8d343d0c511f16ed15b7f8c0a08fcfbb20a256416a20cc"
+  },
+  {
+    "seed": 29,
+    "winner": 2,
+    "round": 18,
+    "trace": "4dc5360efb359fcc84bf7aabeaa4512725044ffe6504482a860d1fe911a13b9f"
+  }
+]

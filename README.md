@@ -141,28 +141,44 @@ the human's hidden hand.
 | `data/mtga/function/` | Generated match logic, controls, bot, and chat interface |
 | `design/cards.json` | Generated card reference |
 | `tools/build.py` | Source generator for the datapack and card reference |
+| `tools/generated.json` | Generated-output checksums for safe cleanup |
 | `tools/validate.py` | Static checks |
 | `tools/test_game.py` | Simulated game-logic tests |
+| `tools/test_build.py` | Isolated build and cleanup tests |
+| `tools/fixtures/duels.json` | Pre-refactor behavior baseline for 30 seeded games |
 
-The large number of small function files comes from generating separate hand
-slots and combat pairings for each seat. It is not the number of cards.
+The pack uses **82 function files**, down from 304. Reusable macros handle hand
+slots, attack toggles, blocker assignments, discards, combat pairs, and deaths.
+The two seats retain separate entry points for readability. Dispatchers only
+pass bounded slot numbers to macros; the player-facing controls are unchanged.
 Generated pack files are committed so the repository works as a datapack without
-Python; reducing duplication with function macros is a future maintenance task.
+Python.
 
 `tools/build.py` generates the functions and metadata using Python 3.
 Edit that generator rather than editing generated functions, then run:
 
 ```text
 python tools/build.py
+python tools/build.py --check
 python tools/validate.py
 python tools/test_game.py
+python tools/test_build.py
 ```
 
-Validation checks JSON, function references, and generated deck/card invariants;
+The builder records its outputs in `tools/generated.json`. On a later build,
+it removes obsolete function files only if their content still matches the
+recorded checksum. Modified obsolete files cause an error rather than being
+deleted; unrecognized files are left alone. `--check` reports stale outputs
+without changing files.
+
+Validation checks JSON, function references, inline macro arguments, and deck/card invariants;
 it is **not** a Minecraft command parser. In-game testing is still required.
 The logic tests run generated functions in a limited Python command model, with
-eight test cases including 30 complete simulated games and card-conservation
-checks. They do not validate Minecraft syntax, selectors, permissions, or networking.
+ten test cases including every hand slot, every attacker/blocker pairing, and
+30 complete simulated games with card-conservation checks. Game-state traces
+are compared with the pre-macro version to detect behavior changes.
+The six build tests verify repeatable generation, check-only mode, and safe cleanup.
+These tests do not validate Minecraft syntax, selectors, permissions, or networking.
 This pack has not yet been loaded in an actual Minecraft server by the authoring
 assistant.
 

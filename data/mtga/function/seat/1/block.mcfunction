@@ -1,32 +1,32 @@
 execute if score #turn mtg matches 1 run return 0
 execute unless score #phase mtg matches 2 run return 0
-execute if score #request mtg matches 10 run function mtga:seat/1/block/1_0
-execute if score #request mtg matches 11 run function mtga:seat/1/block/1_1
-execute if score #request mtg matches 12 run function mtga:seat/1/block/1_2
-execute if score #request mtg matches 13 run function mtga:seat/1/block/1_3
-execute if score #request mtg matches 14 run function mtga:seat/1/block/1_4
-execute if score #request mtg matches 15 run function mtga:seat/1/block/1_5
-execute if score #request mtg matches 20 run function mtga:seat/1/block/2_0
-execute if score #request mtg matches 21 run function mtga:seat/1/block/2_1
-execute if score #request mtg matches 22 run function mtga:seat/1/block/2_2
-execute if score #request mtg matches 23 run function mtga:seat/1/block/2_3
-execute if score #request mtg matches 24 run function mtga:seat/1/block/2_4
-execute if score #request mtg matches 25 run function mtga:seat/1/block/2_5
-execute if score #request mtg matches 30 run function mtga:seat/1/block/3_0
-execute if score #request mtg matches 31 run function mtga:seat/1/block/3_1
-execute if score #request mtg matches 32 run function mtga:seat/1/block/3_2
-execute if score #request mtg matches 33 run function mtga:seat/1/block/3_3
-execute if score #request mtg matches 34 run function mtga:seat/1/block/3_4
-execute if score #request mtg matches 35 run function mtga:seat/1/block/3_5
-execute if score #request mtg matches 40 run function mtga:seat/1/block/4_0
-execute if score #request mtg matches 41 run function mtga:seat/1/block/4_1
-execute if score #request mtg matches 42 run function mtga:seat/1/block/4_2
-execute if score #request mtg matches 43 run function mtga:seat/1/block/4_3
-execute if score #request mtg matches 44 run function mtga:seat/1/block/4_4
-execute if score #request mtg matches 45 run function mtga:seat/1/block/4_5
-execute if score #request mtg matches 50 run function mtga:seat/1/block/5_0
-execute if score #request mtg matches 51 run function mtga:seat/1/block/5_1
-execute if score #request mtg matches 52 run function mtga:seat/1/block/5_2
-execute if score #request mtg matches 53 run function mtga:seat/1/block/5_3
-execute if score #request mtg matches 54 run function mtga:seat/1/block/5_4
-execute if score #request mtg matches 55 run function mtga:seat/1/block/5_5
+execute if score #request mtg matches 10 run function mtga:seat/1/block_pair {"a":1,"b":0}
+execute if score #request mtg matches 11 run function mtga:seat/1/block_pair {"a":1,"b":1}
+execute if score #request mtg matches 12 run function mtga:seat/1/block_pair {"a":1,"b":2}
+execute if score #request mtg matches 13 run function mtga:seat/1/block_pair {"a":1,"b":3}
+execute if score #request mtg matches 14 run function mtga:seat/1/block_pair {"a":1,"b":4}
+execute if score #request mtg matches 15 run function mtga:seat/1/block_pair {"a":1,"b":5}
+execute if score #request mtg matches 20 run function mtga:seat/1/block_pair {"a":2,"b":0}
+execute if score #request mtg matches 21 run function mtga:seat/1/block_pair {"a":2,"b":1}
+execute if score #request mtg matches 22 run function mtga:seat/1/block_pair {"a":2,"b":2}
+execute if score #request mtg matches 23 run function mtga:seat/1/block_pair {"a":2,"b":3}
+execute if score #request mtg matches 24 run function mtga:seat/1/block_pair {"a":2,"b":4}
+execute if score #request mtg matches 25 run function mtga:seat/1/block_pair {"a":2,"b":5}
+execute if score #request mtg matches 30 run function mtga:seat/1/block_pair {"a":3,"b":0}
+execute if score #request mtg matches 31 run function mtga:seat/1/block_pair {"a":3,"b":1}
+execute if score #request mtg matches 32 run function mtga:seat/1/block_pair {"a":3,"b":2}
+execute if score #request mtg matches 33 run function mtga:seat/1/block_pair {"a":3,"b":3}
+execute if score #request mtg matches 34 run function mtga:seat/1/block_pair {"a":3,"b":4}
+execute if score #request mtg matches 35 run function mtga:seat/1/block_pair {"a":3,"b":5}
+execute if score #request mtg matches 40 run function mtga:seat/1/block_pair {"a":4,"b":0}
+execute if score #request mtg matches 41 run function mtga:seat/1/block_pair {"a":4,"b":1}
+execute if score #request mtg matches 42 run function mtga:seat/1/block_pair {"a":4,"b":2}
+execute if score #request mtg matches 43 run function mtga:seat/1/block_pair {"a":4,"b":3}
+execute if score #request mtg matches 44 run function mtga:seat/1/block_pair {"a":4,"b":4}
+execute if score #request mtg matches 45 run function mtga:seat/1/block_pair {"a":4,"b":5}
+execute if score #request mtg matches 50 run function mtga:seat/1/block_pair {"a":5,"b":0}
+execute if score #request mtg matches 51 run function mtga:seat/1/block_pair {"a":5,"b":1}
+execute if score #request mtg matches 52 run function mtga:seat/1/block_pair {"a":5,"b":2}
+execute if score #request mtg matches 53 run function mtga:seat/1/block_pair {"a":5,"b":3}
+execute if score #request mtg matches 54 run function mtga:seat/1/block_pair {"a":5,"b":4}
+execute if score #request mtg matches 55 run function mtga:seat/1/block_pair {"a":5,"b":5}
