@@ -1,0 +1,30 @@
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.coverage
+htmlcov/
+
+# Local editor and operating-system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# Local build and test artifacts
+/build/
+/dist/
+/test-world/
+/logs/
+*.log
+
+# Generated data/, design/cards.json, and pack.mcmeta are intentionally tracked:
+# Minecraft needs them to run the pack without installing Python.
