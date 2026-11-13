@@ -1,0 +1,5 @@
+tellraw @s {"text":"=== MTG Arena: learning duels ===","color":"gold"}
+tellraw @s [{"text":"[Solo: Red vs Green bot]","color":"aqua","click_event":{"action":"run_command","command":"/trigger mtg.menu set 2"}},{"text":"  ","color":"gray"},{"text":"[Host PvP: Red]","color":"aqua","click_event":{"action":"run_command","command":"/trigger mtg.menu set 3"}},{"text":"  ","color":"gray"},{"text":"[Join: Green]","color":"aqua","click_event":{"action":"run_command","command":"/trigger mtg.menu set 4"}}]
+tellraw @s [{"text":"[View match / hand]","color":"aqua","click_event":{"action":"run_command","command":"/trigger mtg.menu set 6"}},{"text":"  ","color":"gray"},{"text":"[Concede / cancel lobby]","color":"aqua","click_event":{"action":"run_command","command":"/trigger mtg.menu set 5"}}]
+tellraw @s {"text":"One match per world. No inventory or terrain changes. Open chat (T) to click.","color":"gray"}
+tellraw @s {"text":"Main: play cards, select attackers, then End. Defense: assign blockers, then Resolve.","color":"gray"}

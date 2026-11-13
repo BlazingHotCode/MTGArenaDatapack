@@ -1,0 +1,58 @@
+{
+  "1": {
+    "name": "Mountain",
+    "cost": 0,
+    "power": 0,
+    "toughness": 0,
+    "text": "Land: add one red mana each turn."
+  },
+  "2": {
+    "name": "Forest",
+    "cost": 0,
+    "power": 0,
+    "toughness": 0,
+    "text": "Land: add one green mana each turn."
+  },
+  "3": {
+    "name": "Goblin Piker",
+    "cost": 2,
+    "power": 2,
+    "toughness": 1,
+    "text": "Creature - Goblin Warrior"
+  },
+  "4": {
+    "name": "Grizzly Bears",
+    "cost": 2,
+    "power": 2,
+    "toughness": 2,
+    "text": "Creature - Bear"
+  },
+  "5": {
+    "name": "Hill Giant",
+    "cost": 4,
+    "power": 3,
+    "toughness": 3,
+    "text": "Creature - Giant"
+  },
+  "6": {
+    "name": "Spined Wurm",
+    "cost": 5,
+    "power": 5,
+    "toughness": 4,
+    "text": "Creature - Wurm"
+  },
+  "7": {
+    "name": "Shock",
+    "cost": 1,
+    "power": 0,
+    "toughness": 0,
+    "text": "Deal 2 damage to your opponent. Main phase only in this prototype."
+  },
+  "8": {
+    "name": "Nourish",
+    "cost": 2,
+    "power": 0,
+    "toughness": 0,
+    "text": "Gain 6 life. Main phase only in this prototype."
+  }
+}
